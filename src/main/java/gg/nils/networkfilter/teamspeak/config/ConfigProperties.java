@@ -8,9 +8,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Properties;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Getter
 public class ConfigProperties {
@@ -21,6 +20,9 @@ public class ConfigProperties {
     private final String teamspeakNickname;
     private final String teamspeakUsername;
     private final String teamspeakPassword;
+    private final List<Integer> teamspeakBypassGroups;
+    private final int teamspeakVPNChannel;
+    private final int teamspeakVPNGroup;
 
     public ConfigProperties() {
         File file = new File("config.properties");
@@ -48,6 +50,11 @@ public class ConfigProperties {
         this.teamspeakNickname = getConfigVar("TEAMSPEAK_NICKNAME", properties);
         this.teamspeakUsername = getConfigVar("TEAMSPEAK_USERNAME", properties);
         this.teamspeakPassword = getConfigVar("TEAMSPEAK_PASSWORD", properties);
+        this.teamspeakBypassGroups = Arrays.stream(getConfigVar("TEAMSPEAK_BYPASSGROUPS", properties).split(","))
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
+        this.teamspeakVPNChannel = Integer.parseInt(getConfigVar("TEAMSPEAK_VPNCHANNEL", properties));
+        this.teamspeakVPNGroup = Integer.parseInt(getConfigVar("TEAMSPEAK_VPNGROUP", properties));
     }
 
     private String getConfigVar(String key, Properties properties) {

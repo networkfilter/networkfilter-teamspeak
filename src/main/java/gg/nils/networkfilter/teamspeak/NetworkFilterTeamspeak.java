@@ -12,8 +12,7 @@ import com.github.theholywaffle.teamspeak3.api.wrapper.Client;
 import gg.nils.networkfilter.teamspeak.api.NetworkFilterAPI;
 import gg.nils.networkfilter.teamspeak.config.ConfigProperties;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.Arrays;
 
 public class NetworkFilterTeamspeak {
 
@@ -57,23 +56,42 @@ public class NetworkFilterTeamspeak {
         this.ts3Query = new TS3Query(this.ts3Config);
         this.ts3Query.connect();
 
+        this.ts3Query.getApi().registerAllEvents();
         this.ts3Query.getApi().addTS3Listeners(new TS3EventAdapter() {
             @Override
             public void onClientJoin(ClientJoinEvent event) {
-                if(event.getClientType() != 0) return;
+                if (event.getClientType() != 0) return;
 
-                // TODO: 11.10.2021 check bypass groups
+                if (Arrays.stream(event.getClientServerGroups().split(",")).map(Integer::parseInt).anyMatch(value ->
+                        configProperties.getTeamspeakBypassGroups().contains(value))) {
+                    return;
+                }
 
-                check(event.getClientNickname(), event.getClientDatabaseId(), event.getUniqueClientIdentifier(), event.get(ClientProperty.CONNECTION_CLIENT_IP));
+                check(
+                        event.getClientId(),
+                        event.getClientDatabaseId(),
+                        event.get(ClientProperty.CONNECTION_CLIENT_IP),
+                        configProperties.getTeamspeakVPNChannel(),
+                        configProperties.getTeamspeakVPNGroup()
+                );
             }
         });
 
         for (Client client : this.ts3Query.getApi().getClients()) {
-            if(client.getType() != 0) continue;
+            if (client.getType() != 0) continue;
 
-            // TODO: 11.10.2021 check bypass groups
+            if (Arrays.stream(client.getServerGroups()).anyMatch(value ->
+                    configProperties.getTeamspeakBypassGroups().contains(value))) {
+                continue;
+            }
 
-            this.check(client.getNickname(), client.getDatabaseId(), client.getUniqueIdentifier(), client.get(ClientProperty.CONNECTION_CLIENT_IP));
+            this.check(
+                    client.getId(),
+                    client.getDatabaseId(),
+                    client.get(ClientProperty.CONNECTION_CLIENT_IP),
+                    configProperties.getTeamspeakVPNChannel(),
+                    configProperties.getTeamspeakVPNGroup()
+            );
         }
     }
 
@@ -81,17 +99,17 @@ public class NetworkFilterTeamspeak {
         new NetworkFilterTeamspeak();
     }
 
-    public void check(String nickname, int databaseId, String uniqueIdentifier, String ip) {
-        NetworkFilterAPI.getInstance().check(ip)
-                .whenComplete((block, throwable) -> {
-                    if (throwable != null) {
-                        throwable.printStackTrace();
-                        return;
-                    }
+    public void check(int clientId, int databaseId, String ip, int channelId, int groupId) {
+        NetworkFilterAPI.getInstance().check(ip).whenComplete((block, throwable) -> {
+            if (throwable != null) {
+                throwable.printStackTrace();
+                return;
+            }
 
-                    if (block) {
-                        System.out.println(nickname + "\t" + block);
-                    }
-                });
+            if (block) {
+                this.ts3Query.getAsyncApi().moveClient(clientId, channelId);
+                this.ts3Query.getAsyncApi().addClientToServerGroup(groupId, databaseId);
+            }
+        });
     }
 }
