@@ -11,9 +11,11 @@ import com.github.theholywaffle.teamspeak3.api.reconnect.ReconnectStrategy;
 import com.github.theholywaffle.teamspeak3.api.wrapper.Client;
 import gg.nils.networkfilter.teamspeak.api.NetworkFilterAPI;
 import gg.nils.networkfilter.teamspeak.config.ConfigProperties;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
 
+@Slf4j
 public class NetworkFilterTeamspeak {
 
     private final TS3Config ts3Config;
@@ -64,11 +66,14 @@ public class NetworkFilterTeamspeak {
 
                 if (Arrays.stream(event.getClientServerGroups().split(",")).map(Integer::parseInt).anyMatch(value ->
                         configProperties.getTeamspeakBypassGroups().contains(value))) {
+                    log.info("Skipped \"{}\" ({})", event.getClientNickname(), event.getUniqueClientIdentifier());
                     return;
                 }
 
                 check(
+                        event.getClientNickname(),
                         event.getClientId(),
+                        event.getUniqueClientIdentifier(),
                         event.getClientDatabaseId(),
                         event.get(ClientProperty.CONNECTION_CLIENT_IP),
                         configProperties.getTeamspeakVPNChannel(),
@@ -82,11 +87,14 @@ public class NetworkFilterTeamspeak {
 
             if (Arrays.stream(client.getServerGroups()).anyMatch(value ->
                     configProperties.getTeamspeakBypassGroups().contains(value))) {
+                log.info("Skipped \"{}\" ({})", client.getNickname(), client.getUniqueIdentifier());
                 continue;
             }
 
             this.check(
+                    client.getNickname(),
                     client.getId(),
+                    client.getUniqueIdentifier(),
                     client.getDatabaseId(),
                     client.get(ClientProperty.CONNECTION_CLIENT_IP),
                     configProperties.getTeamspeakVPNChannel(),
@@ -99,7 +107,7 @@ public class NetworkFilterTeamspeak {
         new NetworkFilterTeamspeak();
     }
 
-    public void check(int clientId, int databaseId, String ip, int channelId, int groupId) {
+    public void check(String nickname, int clientId, String uniqueClientIdentifier, int databaseId, String ip, int channelId, int groupId) {
         NetworkFilterAPI.getInstance().check(ip).whenComplete((block, throwable) -> {
             if (throwable != null) {
                 throwable.printStackTrace();
@@ -110,6 +118,8 @@ public class NetworkFilterTeamspeak {
                 this.ts3Query.getAsyncApi().moveClient(clientId, channelId);
                 this.ts3Query.getAsyncApi().addClientToServerGroup(groupId, databaseId);
             }
+
+            log.info("\"{}\" ({}) has {} vpn", nickname, uniqueClientIdentifier, block ? "a" : "no");
         });
     }
 }
