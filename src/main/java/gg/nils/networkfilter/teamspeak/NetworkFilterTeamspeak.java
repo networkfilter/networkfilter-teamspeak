@@ -9,6 +9,7 @@ import com.github.theholywaffle.teamspeak3.api.event.TS3EventAdapter;
 import com.github.theholywaffle.teamspeak3.api.reconnect.ConnectionHandler;
 import com.github.theholywaffle.teamspeak3.api.reconnect.ReconnectStrategy;
 import com.github.theholywaffle.teamspeak3.api.wrapper.Client;
+import com.github.theholywaffle.teamspeak3.api.wrapper.ClientInfo;
 import gg.nils.networkfilter.teamspeak.api.NetworkFilterAPI;
 import gg.nils.networkfilter.teamspeak.config.ConfigProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -70,12 +71,14 @@ public class NetworkFilterTeamspeak {
                     return;
                 }
 
+                ClientInfo client = ts3Query.getApi().getClientInfo(event.getClientId());
+
                 check(
                         event.getClientNickname(),
                         event.getClientId(),
                         event.getUniqueClientIdentifier(),
                         event.getClientDatabaseId(),
-                        event.get(ClientProperty.CONNECTION_CLIENT_IP),
+                        client.getIp(),
                         configProperties.getTeamspeakVPNChannel(),
                         configProperties.getTeamspeakVPNGroup()
                 );
