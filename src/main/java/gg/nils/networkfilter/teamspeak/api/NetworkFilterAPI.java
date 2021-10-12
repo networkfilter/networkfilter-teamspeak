@@ -48,9 +48,7 @@ public class NetworkFilterAPI {
                     .addHeader("Content-Type", "application/json")
                     .build();
 
-            try {
-                Response response = client.newCall(request).execute();
-
+            try (Response response = client.newCall(request).execute()) {
                 if (!response.isSuccessful()) {
                     return false;
                 }
