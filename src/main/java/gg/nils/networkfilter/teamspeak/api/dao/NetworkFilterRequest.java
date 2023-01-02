@@ -6,4 +6,5 @@ import lombok.Data;
 public class NetworkFilterRequest {
 
     private final String ip;
+
 }

@@ -1,7 +1,6 @@
 package gg.nils.networkfilter.teamspeak.api.dao;
 
 import lombok.Data;
-import lombok.Getter;
 
 @Data
 public class NetworkFilterResponse {
@@ -20,4 +19,5 @@ public class NetworkFilterResponse {
         private final boolean cached;
         private final long took;
     }
+
 }
