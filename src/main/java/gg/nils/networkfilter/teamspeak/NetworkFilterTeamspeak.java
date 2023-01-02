@@ -47,7 +47,52 @@ public class NetworkFilterTeamspeak {
                         configProperties.getTeamspeakPort(),
                         configProperties.getTeamspeakNickname()
                 );
-                ts3Api.addTS3Listeners();
+
+                ts3Api.registerAllEvents();
+                ts3Api.addTS3Listeners(new TS3EventAdapter() {
+                    @Override
+                    public void onClientJoin(ClientJoinEvent event) {
+                        if (event.getClientType() != 0) return;
+
+                        if (Arrays.stream(event.getClientServerGroups().split(",")).map(Integer::parseInt).anyMatch(value ->
+                                configProperties.getTeamspeakBypassGroups().contains(value))) {
+                            log.info("Skipped \"{}\" ({})", event.getClientNickname(), event.getUniqueClientIdentifier());
+                            return;
+                        }
+
+                        ClientInfo client = NetworkFilterTeamspeak.this.ts3Query.getApi().getClientInfo(event.getClientId());
+
+                        NetworkFilterTeamspeak.this.check(
+                                event.getClientNickname(),
+                                event.getClientId(),
+                                event.getUniqueClientIdentifier(),
+                                event.getClientDatabaseId(),
+                                client.getIp(),
+                                configProperties.getTeamspeakVPNChannel(),
+                                configProperties.getTeamspeakVPNGroup()
+                        );
+                    }
+                });
+
+                for (Client client : ts3Api.getClients()) {
+                    if (client.getType() != 0) continue;
+
+                    if (Arrays.stream(client.getServerGroups()).anyMatch(value ->
+                            configProperties.getTeamspeakBypassGroups().contains(value))) {
+                        log.info("Skipped \"{}\" ({})", client.getNickname(), client.getUniqueIdentifier());
+                        continue;
+                    }
+
+                    NetworkFilterTeamspeak.this.check(
+                            client.getNickname(),
+                            client.getId(),
+                            client.getUniqueIdentifier(),
+                            client.getDatabaseId(),
+                            client.get(ClientProperty.CONNECTION_CLIENT_IP),
+                            configProperties.getTeamspeakVPNChannel(),
+                            configProperties.getTeamspeakVPNGroup()
+                    );
+                }
             }
 
             @Override
@@ -58,52 +103,6 @@ public class NetworkFilterTeamspeak {
 
         this.ts3Query = new TS3Query(this.ts3Config);
         this.ts3Query.connect();
-
-        this.ts3Query.getApi().registerAllEvents();
-        this.ts3Query.getApi().addTS3Listeners(new TS3EventAdapter() {
-            @Override
-            public void onClientJoin(ClientJoinEvent event) {
-                if (event.getClientType() != 0) return;
-
-                if (Arrays.stream(event.getClientServerGroups().split(",")).map(Integer::parseInt).anyMatch(value ->
-                        configProperties.getTeamspeakBypassGroups().contains(value))) {
-                    log.info("Skipped \"{}\" ({})", event.getClientNickname(), event.getUniqueClientIdentifier());
-                    return;
-                }
-
-                ClientInfo client = ts3Query.getApi().getClientInfo(event.getClientId());
-
-                check(
-                        event.getClientNickname(),
-                        event.getClientId(),
-                        event.getUniqueClientIdentifier(),
-                        event.getClientDatabaseId(),
-                        client.getIp(),
-                        configProperties.getTeamspeakVPNChannel(),
-                        configProperties.getTeamspeakVPNGroup()
-                );
-            }
-        });
-
-        for (Client client : this.ts3Query.getApi().getClients()) {
-            if (client.getType() != 0) continue;
-
-            if (Arrays.stream(client.getServerGroups()).anyMatch(value ->
-                    configProperties.getTeamspeakBypassGroups().contains(value))) {
-                log.info("Skipped \"{}\" ({})", client.getNickname(), client.getUniqueIdentifier());
-                continue;
-            }
-
-            this.check(
-                    client.getNickname(),
-                    client.getId(),
-                    client.getUniqueIdentifier(),
-                    client.getDatabaseId(),
-                    client.get(ClientProperty.CONNECTION_CLIENT_IP),
-                    configProperties.getTeamspeakVPNChannel(),
-                    configProperties.getTeamspeakVPNGroup()
-            );
-        }
     }
 
     public static void main(String[] args) {
