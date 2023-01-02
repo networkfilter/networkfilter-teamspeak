@@ -44,17 +44,17 @@ public class ConfigProperties {
             ex.printStackTrace();
         }
 
-        this.apiKey = getConfigVar("API_KEY", properties);
-        this.teamspeakHost = getConfigVar("TEAMSPEAK_HOST", properties);
-        this.teamspeakPort = Integer.parseInt(getConfigVar("TEAMSPEAK_PORT", properties));
-        this.teamspeakNickname = getConfigVar("TEAMSPEAK_NICKNAME", properties);
-        this.teamspeakUsername = getConfigVar("TEAMSPEAK_USERNAME", properties);
-        this.teamspeakPassword = getConfigVar("TEAMSPEAK_PASSWORD", properties);
-        this.teamspeakBypassGroups = Arrays.stream(getConfigVar("TEAMSPEAK_BYPASSGROUPS", properties).split(","))
+        this.apiKey = this.getConfigVar("API_KEY", properties);
+        this.teamspeakHost = this.getConfigVar("TEAMSPEAK_HOST", properties);
+        this.teamspeakPort = Integer.parseInt(this.getConfigVar("TEAMSPEAK_PORT", properties));
+        this.teamspeakNickname = this.getConfigVar("TEAMSPEAK_NICKNAME", properties);
+        this.teamspeakUsername = this.getConfigVar("TEAMSPEAK_USERNAME", properties);
+        this.teamspeakPassword = this.getConfigVar("TEAMSPEAK_PASSWORD", properties);
+        this.teamspeakBypassGroups = Arrays.stream(this.getConfigVar("TEAMSPEAK_BYPASSGROUPS", properties).split(","))
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());
-        this.teamspeakVPNChannel = Integer.parseInt(getConfigVar("TEAMSPEAK_VPNCHANNEL", properties));
-        this.teamspeakVPNGroup = Integer.parseInt(getConfigVar("TEAMSPEAK_VPNGROUP", properties));
+        this.teamspeakVPNChannel = Integer.parseInt(this.getConfigVar("TEAMSPEAK_VPNCHANNEL", properties));
+        this.teamspeakVPNGroup = Integer.parseInt(this.getConfigVar("TEAMSPEAK_VPNGROUP", properties));
     }
 
     private String getConfigVar(String key, Properties properties) {
